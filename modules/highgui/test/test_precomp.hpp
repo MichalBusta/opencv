@@ -9,9 +9,7 @@
 #ifndef __OPENCV_TEST_PRECOMP_HPP__
 #define __OPENCV_TEST_PRECOMP_HPP__
 
-#ifdef HAVE_CVCONFIG_H
 # include "cvconfig.h"
-#endif
 
 #include "opencv2/ts/ts.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -29,6 +27,7 @@
     defined(HAVE_CMU1394)      || \
     defined(HAVE_MIL)          || \
     defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
     defined(HAVE_UNICAP)       || \
     defined(HAVE_PVAPI)        || \
     defined(HAVE_OPENNI)       || \
@@ -45,9 +44,11 @@
 #if defined(HAVE_XINE)         || \
     defined(HAVE_GSTREAMER)    || \
     defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
     defined(HAVE_AVFOUNDATION) || \
     /*defined(HAVE_OPENNI)     || too specialized */ \
-    defined(HAVE_FFMPEG)
+    defined(HAVE_FFMPEG)       || \
+    defined(HAVE_MSMF)
 #  define BUILD_WITH_VIDEO_INPUT_SUPPORT 1
 #else
 #  define BUILD_WITH_VIDEO_INPUT_SUPPORT 0
@@ -56,8 +57,10 @@
 #if /*defined(HAVE_XINE)       || */\
     defined(HAVE_GSTREAMER)    || \
     defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
     defined(HAVE_AVFOUNDATION) || \
-    defined(HAVE_FFMPEG)
+    defined(HAVE_FFMPEG)       || \
+    defined(HAVE_MSMF)
 #  define BUILD_WITH_VIDEO_OUTPUT_SUPPORT 1
 #else
 #  define BUILD_WITH_VIDEO_OUTPUT_SUPPORT 0

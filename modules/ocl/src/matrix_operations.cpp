@@ -74,6 +74,7 @@ namespace cv
     }
 }
 
+
 ////////////////////////////////////////////////////////////////////////
 // convert_C3C4
 static void convert_C3C4(const cl_mem &src, oclMat &dst)
@@ -225,6 +226,34 @@ void cv::ocl::oclMat::upload(const Mat &m)
     cols = m.cols;
     offset = ofs.y * step + ofs.x * elemSize();
     //download_channels = m.channels();
+}
+
+cv::ocl::oclMat::operator cv::_InputArray()
+{
+    _InputArray newInputArray;
+    newInputArray.flags = cv::_InputArray::OCL_MAT;
+    newInputArray.obj   = reinterpret_cast<void *>(this);
+    return newInputArray;
+}
+
+cv::ocl::oclMat::operator cv::_OutputArray()
+{
+    _OutputArray newOutputArray;
+    newOutputArray.flags = cv::_InputArray::OCL_MAT;
+    newOutputArray.obj   = reinterpret_cast<void *>(this);
+    return newOutputArray;
+}
+
+cv::ocl::oclMat& cv::ocl::getOclMatRef(InputArray src)
+{
+    CV_Assert(src.flags & cv::_InputArray::OCL_MAT);
+    return *reinterpret_cast<oclMat*>(src.obj);
+}
+
+cv::ocl::oclMat& cv::ocl::getOclMatRef(OutputArray src)
+{
+    CV_Assert(src.flags & cv::_InputArray::OCL_MAT);
+    return *reinterpret_cast<oclMat*>(src.obj);
 }
 
 void cv::ocl::oclMat::download(cv::Mat &m) const
@@ -394,7 +423,7 @@ void cv::ocl::oclMat::convertTo( oclMat &dst, int rtype, double alpha, double be
     if( rtype < 0 )
         rtype = type();
     else
-        rtype = CV_MAKETYPE(CV_MAT_DEPTH(rtype), oclchannels());
+        rtype = CV_MAKETYPE(CV_MAT_DEPTH(rtype), channels());
 
     //int scn = channels();
     int sdepth = depth(), ddepth = CV_MAT_DEPTH(rtype);
@@ -598,7 +627,7 @@ static void set_to_withoutmask_run(const oclMat &dst, const Scalar &scalar, stri
     if(Context::getContext()->supportsFeature(Context::CL_VER_1_2) &&
         dst.offset == 0 && dst.cols == dst.wholecols)
     {
-        clEnqueueFillBuffer((cl_command_queue)dst.clCxt->oclCommandQueue(), 
+        clEnqueueFillBuffer((cl_command_queue)dst.clCxt->oclCommandQueue(),
             (cl_mem)dst.data, args[0].second, args[0].first, 0, dst.step * dst.rows, 0, NULL, NULL);
     }
     else

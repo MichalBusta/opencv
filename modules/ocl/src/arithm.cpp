@@ -98,6 +98,7 @@ namespace cv
         extern const char *arithm_phase;
         extern const char *arithm_pow;
         extern const char *arithm_magnitudeSqr;
+        extern const char *arithm_setidentity;
         //extern const char * jhp_transpose_kernel;
         int64 kernelrealtotal = 0;
         int64 kernelalltotal = 0;
@@ -118,7 +119,7 @@ inline int divUp(int total, int grain)
 /////////////////////// add subtract multiply divide /////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 template<typename T>
-void arithmetic_run(const oclMat &src1, const oclMat &src2, oclMat &dst, 
+void arithmetic_run(const oclMat &src1, const oclMat &src2, oclMat &dst,
                     string kernelName, const char **kernelString, void *_scalar, int op_type = 0)
 {
     if(!src1.clCxt->supportsFeature(Context::CL_DOUBLE) && src1.type() == CV_64F)
@@ -187,12 +188,12 @@ void arithmetic_run(const oclMat &src1, const oclMat &src2, oclMat &dst,
             openCLExecuteKernel(clCxt, kernelString, kernelName, globalThreads, localThreads, args, -1, depth);
     }
 }
-static void arithmetic_run(const oclMat &src1, const oclMat &src2, oclMat &dst, 
+static void arithmetic_run(const oclMat &src1, const oclMat &src2, oclMat &dst,
                            string kernelName, const char **kernelString, int op_type = 0)
 {
     arithmetic_run<char>(src1, src2, dst, kernelName, kernelString, (void *)NULL, op_type);
 }
-static void arithmetic_run(const oclMat &src1, const oclMat &src2, oclMat &dst, const oclMat &mask, 
+static void arithmetic_run(const oclMat &src1, const oclMat &src2, oclMat &dst, const oclMat &mask,
                            string kernelName, const char **kernelString, int op_type = 0)
 {
     if(!src1.clCxt->supportsFeature(Context::CL_DOUBLE) && src1.type() == CV_64F)
@@ -2336,9 +2337,68 @@ void cv::ocl::pow(const oclMat &x, double p, oclMat &y)
         return;
     }
 
-    CV_Assert((x.type() == y.type() && x.size() == y.size() && x.depth() == CV_32F) || x.depth() == CV_64F);
+    CV_Assert(x.depth() == CV_32F || x.depth() == CV_64F);
     y.create(x.size(), x.type());
     string kernelName = "arithm_pow";
 
     arithmetic_pow_run(x, p, y, kernelName, &arithm_pow);
+}
+void cv::ocl::setIdentity(oclMat& src, double scalar)
+{
+    CV_Assert(src.empty() == false && src.rows == src.cols);
+    CV_Assert(src.type() == CV_32SC1 || src.type() == CV_32FC1);
+    int src_step = src.step/src.elemSize();
+    Context  *clCxt = Context::getContext();
+    size_t local_threads[] = {16, 16, 1};
+    size_t global_threads[] = {src.cols, src.rows, 1};
+
+    string kernelName = "setIdentityKernel";
+    if(src.type() == CV_32FC1)
+        kernelName += "_F1";
+    else if(src.type() == CV_32SC1)
+        kernelName += "_I1";
+    else
+    {
+        kernelName += "_D1";
+        if(!(clCxt->supportsFeature(Context::CL_DOUBLE)))
+        {
+            oclMat temp;
+            src.convertTo(temp, CV_32FC1);
+            temp.copyTo(src);
+        }
+
+    }
+
+
+    vector<pair<size_t , const void *> > args;
+    args.push_back( make_pair( sizeof(cl_mem), (void *)&src.data ));
+    args.push_back( make_pair( sizeof(cl_int), (void *)&src.rows));
+    args.push_back( make_pair( sizeof(cl_int), (void *)&src.cols));
+    args.push_back( make_pair( sizeof(cl_int), (void *)&src_step ));
+
+    int scalar_i = 0;
+    float scalar_f = 0.0f;
+    if(clCxt->supportsFeature(Context::CL_DOUBLE))
+    {
+        if(src.type() == CV_32SC1)
+        {
+            scalar_i = (int)scalar;
+            args.push_back(make_pair(sizeof(cl_int), (void*)&scalar_i));
+        }else
+            args.push_back(make_pair(sizeof(cl_double), (void*)&scalar));
+    }
+    else
+    {
+        if(src.type() == CV_32SC1)
+        {
+            scalar_i = (int)scalar;
+            args.push_back(make_pair(sizeof(cl_int), (void*)&scalar_i));
+        }else
+        {
+            scalar_f = (float)scalar;
+            args.push_back(make_pair(sizeof(cl_float), (void*)&scalar_f));
+        }
+    }
+
+    openCLExecuteKernel(clCxt, &arithm_setidentity, kernelName, global_threads, local_threads, args, -1, -1);
 }

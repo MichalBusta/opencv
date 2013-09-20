@@ -22,6 +22,10 @@ OpenCV enables you to specify the extrapolation method. For details, see the fun
     * BORDER_CONSTANT:      iiiiii|abcdefgh|iiiiiii  with some specified 'i'
     */
 
+.. note::
+
+   * (Python) A complete example illustrating different morphological operations like erode/dilate, open/close, blackhat/tophat ... can be found at opencv_source_code/samples/python2/morphology.py
+
 BaseColumnFilter
 ----------------
 .. ocv:class:: BaseColumnFilter
@@ -407,6 +411,28 @@ http://www.dai.ed.ac.uk/CVonline/LOCAL\_COPIES/MANDUCHI1/Bilateral\_Filtering.ht
 
 This filter does not work inplace.
 
+
+adaptiveBilateralFilter
+-----------------------
+Applies the adaptive bilateral filter to an image.
+
+.. ocv:function:: void adaptiveBilateralFilter( InputArray src, OutputArray dst, Size ksize, double sigmaSpace, Point anchor=Point(-1, -1), int borderType=BORDER_DEFAULT )
+
+.. ocv:pyfunction:: cv2.adaptiveBilateralFilter(src, ksize, sigmaSpace[, dst[, anchor[, borderType]]]) -> dst
+
+    :param src: Source 8-bit, 1-channel or 3-channel image.
+
+    :param dst: Destination image of the same size and type as  ``src`` .
+
+    :param ksize: filter kernel size.
+
+    :param sigmaSpace: Filter sigma in the coordinate space. It has similar meaning with ``sigmaSpace`` in ``bilateralFilter``.
+
+    :param anchor: anchor point; default value ``Point(-1,-1)`` means that the anchor is at the kernel center. Only default value is supported now.
+
+    :param borderType: border mode used to extrapolate pixels outside of the image.
+
+The function applies adaptive bilateral filtering to the input image. This filter is similar to ``bilateralFilter``, in that dissimilarity from and distance to the center pixel is punished. Instead of using ``sigmaColor``, we employ the variance of pixel values in the neighbourhood.
 
 
 
@@ -868,6 +894,9 @@ The function supports the in-place mode. Dilation can be applied several ( ``ite
     :ocv:func:`morphologyEx`,
     :ocv:func:`createMorphologyFilter`
 
+.. note::
+
+   * An example using the morphological dilate operation can be found at opencv_source_code/samples/cpp/morphology2.cpp
 
 erode
 -----
@@ -908,7 +937,9 @@ The function supports the in-place mode. Erosion can be applied several ( ``iter
     :ocv:func:`morphologyEx`,
     :ocv:func:`createMorphologyFilter`
 
+.. note::
 
+   * An example using the morphological erode operation can be found at opencv_source_code/samples/cpp/morphology2.cpp
 
 filter2D
 --------
@@ -1245,6 +1276,9 @@ Any of the operations can be done in-place. In case of multi-channel images, eac
     :ocv:func:`erode`,
     :ocv:func:`createMorphologyFilter`
 
+.. note::
+
+   * An example using the morphologyEx function for the morphological opening and closing operations can be found at opencv_source_code/samples/cpp/morphology2.cpp
 
 Laplacian
 ---------
@@ -1290,7 +1324,9 @@ This is done when ``ksize > 1`` . When ``ksize == 1`` , the Laplacian is compute
     :ocv:func:`Sobel`,
     :ocv:func:`Scharr`
 
+.. note::
 
+   * An example using the Laplace transformation for edge detection can be found at opencv_source_code/samples/cpp/laplace.cpp
 
 pyrDown
 -------
@@ -1351,6 +1387,10 @@ Upsamples an image and then blurs it.
 The function performs the upsampling step of the Gaussian pyramid construction, though it can actually be used to construct the Laplacian pyramid. First, it upsamples the source image by injecting even zero rows and columns and then convolves the result with the same kernel as in
 :ocv:func:`pyrDown`  multiplied by 4.
 
+.. note::
+
+   * (Python) An example of Laplacian Pyramid construction and merging can be found at opencv_source_code/samples/python2/lappyr.py
+
 
 pyrMeanShiftFiltering
 ---------------------
@@ -1400,6 +1440,9 @@ After the iterations over, the color components of the initial pixel (that is, t
 
 When ``maxLevel > 0``, the gaussian pyramid of ``maxLevel+1`` levels is built, and the above procedure is run on the smallest layer first. After that, the results are propagated to the larger layer and the iterations are run again only on those pixels where the layer colors differ by more than ``sr`` from the lower-resolution layer of the pyramid. That makes boundaries of color regions sharper. Note that the results will be actually different from the ones obtained by running the meanshift procedure on the whole original image (i.e. when ``maxLevel==0``).
 
+.. note::
+
+   * An example using mean-shift image segmentation can be found at opencv_source_code/samples/cpp/meanshift_segmentation.cpp
 
 sepFilter2D
 -----------
@@ -1425,7 +1468,7 @@ Applies a separable linear filter to an image.
 
     :param kernelY: Coefficients for filtering each column.
 
-    :param anchor: Anchor position within the kernel. The default value  :math:`(-1, 1)`  means that the anchor is at the kernel center.
+    :param anchor: Anchor position within the kernel. The default value  :math:`(-1,-1)`  means that the anchor is at the kernel center.
 
     :param delta: Value added to the filtered results before storing them.
 
@@ -1621,4 +1664,3 @@ is equivalent to
 .. seealso::
 
     :ocv:func:`cartToPolar`
-
