@@ -12,3 +12,6 @@ tags
 =======
 *.autosave
 >>>>>>> upstream/2.4
+/ReleaseStatic
+/ReleaseStaticMinimal
+/Release
