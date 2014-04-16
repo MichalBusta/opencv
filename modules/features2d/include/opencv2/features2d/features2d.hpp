@@ -566,10 +566,10 @@ protected:
 
 //! detects corners using FAST algorithm by E. Rosten
 CV_EXPORTS void FAST( InputArray image, CV_OUT vector<KeyPoint>& keypoints,
-                      int threshold, bool nonmaxSupression=true );
+                      int threshold, bool nonmaxSuppression=true );
 
 CV_EXPORTS void FASTX( InputArray image, CV_OUT vector<KeyPoint>& keypoints,
-                      int threshold, bool nonmaxSupression, int type );
+                      int threshold, bool nonmaxSuppression, int type );
 
 class CV_EXPORTS_W FastFeatureDetector : public FeatureDetector
 {
@@ -1017,7 +1017,7 @@ struct CV_EXPORTS Hamming
 
 typedef Hamming HammingLUT;
 
-template<int cellsize> struct CV_EXPORTS HammingMultilevel
+template<int cellsize> struct HammingMultilevel
 {
     enum { normType = NORM_HAMMING + (cellsize>1) };
     typedef unsigned char ValueType;

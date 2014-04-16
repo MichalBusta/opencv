@@ -948,7 +948,7 @@ static void not8u( const uchar* src1, size_t step1,
                    const uchar* src2, size_t step2,
                    uchar* dst, size_t step, Size sz, void* )
 {
-    IF_IPP(fixSteps(sz, sizeof(dst[0]), step1, step2, step);
+    IF_IPP(fixSteps(sz, sizeof(dst[0]), step1, step2, step); (void *)src2;
            ippiNot_8u_C1R(src1, (int)step1, dst, (int)step, (IppiSize&)sz),
            (vBinOp8<uchar, OpNot<uchar>, IF_SIMD(_VNot8u)>(src1, step1, src2, step2, dst, step, sz)));
 }
@@ -1272,8 +1272,8 @@ static void arithm_op(InputArray _src1, InputArray _src2, OutputArray _dst,
     bool haveScalar = false, swapped12 = false;
     int depth2 = src2.depth();
     if( src1.size != src2.size || src1.channels() != src2.channels() ||
-        ((kind1 == _InputArray::MATX || kind2 == _InputArray::MATX) &&
-         src1.cols == 1 && src2.rows == 4) )
+        (kind1 == _InputArray::MATX && (src1.size() == Size(1,4) || src1.size() == Size(1,1))) ||
+        (kind2 == _InputArray::MATX && (src2.size() == Size(1,4) || src2.size() == Size(1,1))) )
     {
         if( checkScalar(src1, src2.type(), kind1, kind2) )
         {

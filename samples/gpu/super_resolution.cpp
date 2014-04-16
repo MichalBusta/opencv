@@ -1,6 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <ctype.h>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -132,17 +134,9 @@ int main(int argc, const char* argv[])
     }
 #endif
 #if defined(HAVE_OPENCV_OCL)
-    std::vector<cv::ocl::Info>info;
     if(useCuda)
     {
         CV_Assert(!useOcl);
-        info.clear();
-    }
-
-    if(useOcl)
-    {
-        CV_Assert(!useCuda);
-        cv::ocl::getDevice(info);
     }
 #endif
     Ptr<SuperResolution> superRes;
@@ -229,7 +223,11 @@ int main(int argc, const char* argv[])
 
         if(useOcl)
         {
-            MEASURE_TIME(superRes->nextFrame(result_));
+            MEASURE_TIME(
+            {
+                superRes->nextFrame(result_);
+                ocl::finish();
+            });
         }
         else
 #endif

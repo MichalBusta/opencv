@@ -26,7 +26,7 @@
 //
 //   * Redistribution's in binary form must reproduce the above copyright notice,
 //     this list of conditions and the following disclaimer in the documentation
-//     and/or other oclMaterials provided with the distribution.
+//     and/or other materials provided with the distribution.
 //
 //   * The name of the copyright holders may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
@@ -43,7 +43,9 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
+
 #include "perf_precomp.hpp"
+#include <functional>
 
 using namespace perf;
 
@@ -66,13 +68,13 @@ struct RectLess :
     }
 };
 
-PERF_TEST(HOGFixture, HOG)
+OCL_PERF_TEST(HOGFixture, HOG)
 {
     Mat src = imread(getDataPath("gpu/hog/road.png"), cv::IMREAD_GRAYSCALE);
     ASSERT_TRUE(!src.empty()) << "can't open input image road.png";
 
     vector<cv::Rect> found_locations;
-    declare.in(src).time(5);
+    declare.in(src);
 
     if (RUN_PLAIN_IMPL)
     {

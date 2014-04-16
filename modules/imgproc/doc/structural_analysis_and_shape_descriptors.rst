@@ -296,7 +296,7 @@ Approximates a polygonal curve(s) with the specified precision.
 The functions ``approxPolyDP`` approximate a curve or a polygon with another curve/polygon with less vertices so that the distance between them is less or equal to the specified precision. It uses the Douglas-Peucker algorithm
 http://en.wikipedia.org/wiki/Ramer-Douglas-Peucker_algorithm
 
-See http://code.opencv.org/projects/opencv/repository/revisions/master/entry/samples/cpp/contours.cpp for the function usage model.
+See https://github.com/Itseez/opencv/tree/master/samples/cpp/contours2.cpp for the function usage model.
 
 
 ApproxChains
@@ -356,8 +356,6 @@ Calculates the up-right bounding rectangle of a point set.
     :param points: Input 2D point set, stored in ``std::vector`` or ``Mat``.
 
 The function calculates and returns the minimal up-right bounding rectangle for the specified point set.
-
-
 
 
 contourArea
@@ -489,6 +487,7 @@ Fits an ellipse around a set of 2D points.
         * Nx2 numpy array (Python interface)
 
 The function calculates the ellipse that fits (in a least-squares sense) a set of 2D points best of all. It returns the rotated rectangle in which the ellipse is inscribed. The algorithm [Fitzgibbon95]_ is used.
+Developer should keep in mind that it is possible that the returned ellipse/rotatedRect data contains negative indices, due to the data points being close to the border of the containing Mat element.
 
 .. note::
 
@@ -614,7 +613,7 @@ Finds a rotated rectangle of the minimum area enclosing the input 2D point set.
         * Nx2 numpy array (Python interface)
 
 The function calculates and returns the minimum-area bounding rectangle (possibly rotated) for a specified point set. See the OpenCV sample ``minarea.cpp`` .
-
+Developer should keep in mind that the returned rotatedRect can contain negative indices when data is close the the containing Mat element boundary.
 
 
 minEnclosingCircle

@@ -217,7 +217,7 @@ public:
     {
         const void *yS = src.ptr<uchar>(range.start);
         void *yD = dst.ptr<uchar>(range.start);
-        if( cvt(yS, (int)src.step[0], yD, (int)dst.step[0], src.cols, range.end - range.start) < 0 )
+        if( !cvt(yS, (int)src.step[0], yD, (int)dst.step[0], src.cols, range.end - range.start) )
             *ok = false;
     }
 
@@ -729,7 +729,7 @@ template<> struct RGB2Gray<uchar>
 {
     typedef uchar channel_type;
 
-    RGB2Gray<uchar>(int _srccn, int blueIdx, const int* coeffs) : srccn(_srccn)
+    RGB2Gray(int _srccn, int blueIdx, const int* coeffs) : srccn(_srccn)
     {
         const int coeffs0[] = { R2Y, G2Y, B2Y };
         if(!coeffs) coeffs = coeffs0;
@@ -760,7 +760,7 @@ template<> struct RGB2Gray<ushort>
 {
     typedef ushort channel_type;
 
-    RGB2Gray<ushort>(int _srccn, int blueIdx, const int* _coeffs) : srccn(_srccn)
+    RGB2Gray(int _srccn, int blueIdx, const int* _coeffs) : srccn(_srccn)
     {
         static const int coeffs0[] = { R2Y, G2Y, B2Y };
         memcpy(coeffs, _coeffs ? _coeffs : coeffs0, 3*sizeof(coeffs[0]));
@@ -3214,7 +3214,7 @@ struct YUV420p2RGB888Invoker : ParallelLoopBody
         const int rangeBegin = range.start * 2;
         const int rangeEnd = range.end * 2;
 
-        size_t uvsteps[2] = {width/2, stride - width/2};
+        int uvsteps[2] = {width/2, stride - width/2};
         int usIdx = ustepIdx, vsIdx = vstepIdx;
 
         const uchar* y1 = my1 + rangeBegin * stride;
@@ -3282,7 +3282,7 @@ struct YUV420p2RGBA8888Invoker : ParallelLoopBody
         int rangeBegin = range.start * 2;
         int rangeEnd = range.end * 2;
 
-        size_t uvsteps[2] = {width/2, stride - width/2};
+        int uvsteps[2] = {width/2, stride - width/2};
         int usIdx = ustepIdx, vsIdx = vstepIdx;
 
         const uchar* y1 = my1 + rangeBegin * stride;
@@ -3737,7 +3737,7 @@ void cv::cvtColor( InputArray _src, OutputArray _dst, int code, int dcn )
             CV_Assert( scn == 3 || scn == 4 );
             _dst.create(sz, CV_MAKETYPE(depth, 1));
             dst = _dst.getMat();
-
+/*
 #if defined (HAVE_IPP) && (IPP_VERSION_MAJOR >= 7)
             if( code == CV_BGR2GRAY )
             {
@@ -3760,7 +3760,7 @@ void cv::cvtColor( InputArray _src, OutputArray _dst, int code, int dcn )
                     return;
             }
 #endif
-
+*/
             bidx = code == CV_BGR2GRAY || code == CV_BGRA2GRAY ? 0 : 2;
 
             if( depth == CV_8U )

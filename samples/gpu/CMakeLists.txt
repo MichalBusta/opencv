@@ -40,11 +40,16 @@ if(BUILD_EXAMPLES AND OCV_DEPENDENCIES_FOUND)
     add_executable(${the_target} ${srcs})
 
     target_link_libraries(${the_target} ${OPENCV_LINKER_LIBS} ${OPENCV_GPU_SAMPLES_REQUIRED_DEPS})
+
+    if(HAVE_CUDA AND NOT ANDROID)
+      target_link_libraries(${the_target} ${CUDA_CUDA_LIBRARY})
+    endif()
+
     if(HAVE_opencv_nonfree)
       target_link_libraries(${the_target} opencv_nonfree)
     endif()
 
-    if(HAVE_OPENCL)
+    if(HAVE_opencv_ocl)
       target_link_libraries(${the_target} opencv_ocl)
     endif()
 
@@ -60,7 +65,7 @@ if(BUILD_EXAMPLES AND OCV_DEPENDENCIES_FOUND)
       if(MSVC AND NOT BUILD_SHARED_LIBS)
         set_target_properties(${the_target} PROPERTIES LINK_FLAGS "/NODEFAULTLIB:atlthunk.lib /NODEFAULTLIB:atlsd.lib /DEBUG")
       endif()
-      install(TARGETS ${the_target} RUNTIME DESTINATION "samples/${project}" COMPONENT main)
+      install(TARGETS ${the_target} RUNTIME DESTINATION "${OPENCV_SAMPLES_BIN_INSTALL_PATH}/${project}" COMPONENT samples)
     endif()
   ENDMACRO()
 
@@ -78,6 +83,6 @@ endif()
 if (INSTALL_C_EXAMPLES AND NOT WIN32)
   file(GLOB install_list *.c *.cpp *.jpg *.png *.data makefile.* build_all.sh *.dsp *.cmd )
   install(FILES ${install_list}
-          DESTINATION share/OpenCV/samples/${project}
-          PERMISSIONS OWNER_READ GROUP_READ WORLD_READ)
+          DESTINATION ${OPENCV_SAMPLES_SRC_INSTALL_PATH}/gpu
+          PERMISSIONS OWNER_READ GROUP_READ WORLD_READ COMPONENT samples)
 endif()

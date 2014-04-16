@@ -1,17 +1,13 @@
-*.pyc
-.DS_Store
-refman.rst
-OpenCV4Tegra/
-tegra/
-*.user
-.sw[a-z]
-.*.swp
-tags
-<<<<<<< HEAD
-/Debug
-=======
 *.autosave
->>>>>>> upstream/2.4
+*.pyc
+*.user
+*~
+.*.swp
+.DS_Store
+.sw[a-z]
+tags
+/Debug
 /ReleaseStatic
 /ReleaseStaticMinimal
 /Release
+tegra/

@@ -25,7 +25,7 @@
 //
 //   * Redistribution's in binary form must reproduce the above copyright notice,
 //     this list of conditions and the following disclaimer in the documentation
-//     and/or other oclMaterials provided with the distribution.
+//     and/or other materials provided with the distribution.
 //
 //   * The name of the copyright holders may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
@@ -44,9 +44,10 @@
 //M*/
 
 #include "precomp.hpp"
+#include "opencl_kernels.hpp"
+
 using namespace cv;
 using namespace cv::ocl;
-using namespace std;
 
 #define CELL_WIDTH 8
 #define CELL_HEIGHT 8
@@ -56,15 +57,6 @@ using namespace std;
 
 static oclMat gauss_w_lut;
 static bool hog_device_cpu;
-
-namespace cv
-{
-    namespace ocl
-    {
-        ///////////////////////////OpenCL kernel strings///////////////////////////
-        extern const char *objdetect_hog;
-    }
-}
 
 namespace cv
 {
@@ -83,6 +75,11 @@ namespace cv
                 int cdescr_size;
                 int cdescr_width;
                 int cdescr_height;
+
+                // A shift value and type that allows qangle to be different
+                // sizes on different hardware
+                int qangle_step_shift;
+                int qangle_type;
 
                 void set_up_constants(int nbins, int block_stride_x, int block_stride_y,
                                       int nblocks_win_x, int nblocks_win_y);
@@ -124,11 +121,6 @@ namespace cv
 
 using namespace ::cv::ocl::device;
 
-static inline int divUp(int total, int grain)
-{
-    return (total + grain - 1) / grain;
-}
-
 cv::ocl::HOGDescriptor::HOGDescriptor(Size win_size_, Size block_size_, Size block_stride_,
                                       Size cell_size_, int nbins_, double win_sigma_,
                                       double threshold_L2hys_, bool gamma_correction_, int nlevels_)
@@ -162,10 +154,11 @@ cv::ocl::HOGDescriptor::HOGDescriptor(Size win_size_, Size block_size_, Size blo
 
     effect_size = Size(0, 0);
 
-    if (queryDeviceInfo<IS_CPU_DEVICE, bool>())
+    if (isCpuDevice())
         hog_device_cpu = true;
     else
         hog_device_cpu = false;
+
 }
 
 size_t cv::ocl::HOGDescriptor::getDescriptorSize() const
@@ -226,7 +219,7 @@ void cv::ocl::HOGDescriptor::init_buffer(const oclMat &img, Size win_stride)
         effect_size = img.size();
 
     grad.create(img.size(), CV_32FC2);
-    qangle.create(img.size(), CV_8UC2);
+    qangle.create(img.size(), hog::qangle_type);
 
     const size_t block_hist_size = getBlockHistogramSize();
     const Size blocks_per_img = numPartsWithin(img.size(), block_size, block_stride);
@@ -1620,6 +1613,16 @@ void cv::ocl::device::hog::set_up_constants(int nbins,
 
     int descr_size = descr_width * nblocks_win_y;
     cdescr_size = descr_size;
+
+    qangle_type = CV_8UC2;
+    qangle_step_shift = 0;
+    // Some Intel devices have low single-byte access performance,
+    // so we change the datatype here.
+    if (Context::getContext()->supportsFeature(FEATURE_CL_INTEL_DEVICE))
+    {
+        qangle_type = CV_32SC2;
+        qangle_step_shift = 2;
+    }
 }
 
 void cv::ocl::device::hog::compute_hists(int nbins,
@@ -1641,7 +1644,7 @@ void cv::ocl::device::hog::compute_hists(int nbins,
     int blocks_total = img_block_width * img_block_height;
 
     int grad_quadstep = grad.step >> 2;
-    int qangle_step = qangle.step;
+    int qangle_step = qangle.step >> qangle_step_shift;
 
     int blocks_in_group = 4;
     size_t localThreads[3] = { blocks_in_group * 24, 2, 1 };
@@ -1671,12 +1674,13 @@ void cv::ocl::device::hog::compute_hists(int nbins,
     {
         openCLExecuteKernel(clCxt, &objdetect_hog, kernelName, globalThreads,
             localThreads, args, -1, -1, "-D CPU");
-    }else
+    }
+    else
     {
         cl_kernel kernel = openCLGetKernelFromSource(clCxt, &objdetect_hog, kernelName);
-        int wave_size = queryDeviceInfo<WAVEFRONT_SIZE, int>(kernel);
+        size_t wave_size = queryWaveFrontSize(kernel);
         char opt[32] = {0};
-        sprintf(opt, "-D WAVE_SIZE=%d", wave_size);
+        sprintf(opt, "-D WAVE_SIZE=%d", (int)wave_size);
         openCLExecuteKernel(clCxt, &objdetect_hog, kernelName, globalThreads,
             localThreads, args, -1, -1, opt);
     }
@@ -1738,9 +1742,9 @@ void cv::ocl::device::hog::normalize_hists(int nbins,
     else
     {
         cl_kernel kernel = openCLGetKernelFromSource(clCxt, &objdetect_hog, kernelName);
-        int wave_size = queryDeviceInfo<WAVEFRONT_SIZE, int>(kernel);
+        size_t wave_size = queryWaveFrontSize(kernel);
         char opt[32] = {0};
-        sprintf(opt, "-D WAVE_SIZE=%d", wave_size);
+        sprintf(opt, "-D WAVE_SIZE=%d", (int)wave_size);
         openCLExecuteKernel(clCxt, &objdetect_hog, kernelName, globalThreads,
                              localThreads, args, -1, -1, opt);
     }
@@ -1807,9 +1811,9 @@ void cv::ocl::device::hog::classify_hists(int win_height, int win_width,
     else
     {
         cl_kernel kernel = openCLGetKernelFromSource(clCxt, &objdetect_hog, kernelName);
-        int wave_size = queryDeviceInfo<WAVEFRONT_SIZE, int>(kernel);
+        size_t wave_size = queryWaveFrontSize(kernel);
         char opt[32] = {0};
-        sprintf(opt, "-D WAVE_SIZE=%d", wave_size);
+        sprintf(opt, "-D WAVE_SIZE=%d", (int)wave_size);
         openCLExecuteKernel(clCxt, &objdetect_hog, kernelName, globalThreads,
                              localThreads, args, -1, -1, opt);
     }
@@ -1904,7 +1908,7 @@ void cv::ocl::device::hog::compute_gradients_8UC1(int height, int width,
     char correctGamma = (correct_gamma) ? 1 : 0;
     int img_step = img.step;
     int grad_quadstep = grad.step >> 3;
-    int qangle_step = qangle.step >> 1;
+    int qangle_step = qangle.step >> (1 + qangle_step_shift);
 
     args.push_back( make_pair( sizeof(cl_int), (void *)&height));
     args.push_back( make_pair( sizeof(cl_int), (void *)&width));
@@ -1939,7 +1943,7 @@ void cv::ocl::device::hog::compute_gradients_8UC4(int height, int width,
     char correctGamma = (correct_gamma) ? 1 : 0;
     int img_step = img.step >> 2;
     int grad_quadstep = grad.step >> 3;
-    int qangle_step = qangle.step >> 1;
+    int qangle_step = qangle.step >> (1 + qangle_step_shift);
 
     args.push_back( make_pair( sizeof(cl_int), (void *)&height));
     args.push_back( make_pair( sizeof(cl_int), (void *)&width));
