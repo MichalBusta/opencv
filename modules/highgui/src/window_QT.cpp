@@ -99,8 +99,8 @@ CV_IMPL CvFont cvFontQt(const char* nameFont, int pointSize,CvScalar color,int w
 
 CV_IMPL void cvAddText(const CvArr* img, const char* text, CvPoint org, CvFont* font)
 {
-    if (!guiMainThread)
-        CV_Error( CV_StsNullPtr, "NULL guiReceiver (please create a window)" );
+    //if (!guiMainThread)
+    //    CV_Error( CV_StsNullPtr, "NULL guiReceiver (please create a window)" );
 
     QMetaObject::invokeMethod(guiMainThread,
         "putText",
